@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: paymentService
+server:
+  port: 8083
