@@ -1,5 +1,5 @@
 spring:
   application:
-    name: courseService
+    name: userService
 server:
-  port: 8081
+  port: 8082
