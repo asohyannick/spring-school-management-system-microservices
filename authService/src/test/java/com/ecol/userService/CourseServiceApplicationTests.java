@@ -1,4 +1,4 @@
-package com.ecol.courseService;
+package com.ecol.userService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

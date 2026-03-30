@@ -1,0 +1,13 @@
+package com.ecol.userService.exception;
+
+public class UnAuthorizedExceptionHandler extends RuntimeException {
+    public UnAuthorizedExceptionHandler(String message) {
+        super(message);
+    }
+    public UnAuthorizedExceptionHandler(String message, Throwable cause) {
+        super(message, cause);
+    }
+    public UnAuthorizedExceptionHandler(Throwable cause) {
+        super(cause);
+    }
+}
