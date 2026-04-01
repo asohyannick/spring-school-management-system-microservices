@@ -1,0 +1,26 @@
+package com.ecol.authService.enums;
+public enum UserRole {
+    SUPER_ADMIN,
+    SCHOOL_ADMIN,
+    PRINCIPAL,
+    VICE_PRINCIPAL,
+    REGISTRAR,
+    TEACHER,
+    HEAD_OF_DEPARTMENT,
+    ACADEMIC_COORDINATOR,
+    LIBRARIAN,
+    LAB_ASSISTANT,
+    STUDENT,
+    PARENT,
+    GUARDIAN,
+    ACCOUNTANT,
+    BURSAR,
+    CASHIER,
+    HR_MANAGER,
+    RECEPTIONIST,
+    COUNSELOR,
+    NURSE,
+    SECURITY_OFFICER,
+    MAINTENANCE_STAFF,
+    DRIVER
+}
