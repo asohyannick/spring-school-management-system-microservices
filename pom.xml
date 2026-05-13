@@ -46,6 +46,7 @@
         <flyway.version>10.10.0</flyway.version>
         <itext7.version>8.0.4</itext7.version>
         <springdoc.version>2.5.0</springdoc.version>
+        <minio.version>9.0.0</minio.version>
     </properties>
 
     <dependencyManagement>
@@ -129,6 +130,11 @@
                 <version>${springdoc.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -142,6 +148,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -1,6 +1,6 @@
 package com.ecol.authService.config.JwtConfig;
 import com.ecol.authService.enums.UserRole;
-import com.ecol.authService.exception.BadRequestExceptionHandler;
+import com.ecol.authService.exception.badRequestException.BadRequestException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -89,7 +89,7 @@ private String resolveToken(HttpServletRequest request) {
 	return null;
 }
 
-private void processAuthentication(String token, HttpServletRequest request) {
+private void processAuthentication(String token, HttpServletRequest request) throws  Exception {
 	Claims claims  = jwtConfig.validateToken(token);
 	String email   = claims.getSubject();
 	String roleStr = claims.get("role", String.class);
@@ -114,14 +114,14 @@ private void processAuthentication(String token, HttpServletRequest request) {
 	log.debug("Authenticated user: {} with role: {}", email, userRole);
 }
 
-private UserRole parseRole(String roleStr) {
+private UserRole parseRole(String roleStr) throws Exception {
 	if (!StringUtils.hasText(roleStr)) {
 		log.warn("No role found in JWT, defaulting to STUDENT");
 		return UserRole.STUDENT;
 	}
 	try {
 		return UserRole.valueOf(roleStr);
-	} catch ( BadRequestExceptionHandler e) {
+	} catch ( BadRequestException e) {
 		log.warn("Unknown role '{}' in JWT, defaulting to STUDENT", roleStr);
 		return UserRole.STUDENT;
 	}

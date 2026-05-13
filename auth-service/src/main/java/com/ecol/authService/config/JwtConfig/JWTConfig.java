@@ -1,5 +1,5 @@
 package com.ecol.authService.config.JwtConfig;
-import com.ecol.authService.exception.BadRequestExceptionHandler;
+import com.ecol.authService.exception.badRequestException.BadRequestException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -35,7 +35,7 @@ public class JWTConfig {
 		private SecretKey getSigningKey() {
 			byte[] keyBytes = jwtSecretKey.getBytes(StandardCharsets.UTF_8);
 			if (keyBytes.length < 32) {
-				throw new BadRequestExceptionHandler("JWT secret key must be at least 32 characters long");
+				throw new BadRequestException ("JWT secret key must be at least 32 characters long");
 			}
 			return Keys.hmacShaKeyFor(keyBytes);
 		}
@@ -124,7 +124,7 @@ public class JWTConfig {
 						       .getPayload()
 						       .getSubject();
 			} catch (JwtException e) {
-				throw new BadRequestExceptionHandler("Invalid password reset token");
+				throw new BadRequestException ("Invalid password reset token");
 			}
 		}
 }

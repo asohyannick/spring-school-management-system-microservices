@@ -7,7 +7,7 @@
         <groupId>com.sms</groupId>
         <artifactId>sms-microservices</artifactId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../human-reesource-service/pom.xml</relativePath>
+        <relativePath>../human-resource-service/pom.xml</relativePath>
     </parent>
 
     <artifactId>human-resource-service</artifactId>

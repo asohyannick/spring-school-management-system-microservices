@@ -1,7 +1,7 @@
 package com.ecol.authService.config.securityConfig;
 import com.ecol.authService.config.JwtConfig.JWTAuthenticationFilter;
 import com.ecol.authService.config.corsConfig.CorsConfig;
-import com.ecol.authService.exception.GlobalExceptionResponseHandler;
+import com.ecol.authService.exception.globalExceptionResponseHandler.GlobalExceptionResponseHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +120,8 @@ public class SecurityConfig {
 						                                          .sessionCreationPolicy ( SessionCreationPolicy.STATELESS ) )
 				.authorizeHttpRequests ( auth -> auth
 						.requestMatchers ( publicEndpoints() ).permitAll ()
+						                                 
+						                                 // Every other request must be authenticated
 						.anyRequest ( ).authenticated ( )
 				)
 				.exceptionHandling ( exception -> exception

@@ -1,5 +1,4 @@
 package com.ecol.authService.mapper;
-import com.ecol.authService.dto.AuthRequestDto;
 import com.ecol.authService.dto.UserResponseDto;
 import com.ecol.authService.entity.User;
 import org.mapstruct.Mapper;
