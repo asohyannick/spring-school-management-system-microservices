@@ -1,0 +1,73 @@
+# ============================================================
+#  payment-service configuration
+#  Database  : PostgreSQL
+#  Messaging : Kafka (Producer + Consumer)
+#  Produces  : payment.completed, payment.failed
+#  Consumes  : student.admitted
+# ============================================================
+
+server:
+  port: 8085
+
+spring:
+  application:
+    name: payment-service
+
+  # ── PostgreSQL DataSource ──────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${PAYMENT_POSTGRES_DB:payment_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Kafka ─────────────────────────────────────────────────
+  kafka:
+    producer:
+      topics:
+        payment-completed: payment.completed  # ← publishes this
+        payment-failed: payment.failed        # ← publishes this
+
+    consumer:
+      topics:
+        student-admitted: student.admitted    # ← listens to this
+      group-id: payment-group
+
+# ── Stripe Payment Gateway ────────────────────────────────
+stripe:
+  api-key: ${STRIPE_API_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+# ── PayPal Payment Gateway ────────────────────────────────
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID}
+  client-secret: ${PAYPAL_CLIENT_SECRET}
+  mode: ${PAYPAL_MODE:sandbox}              # sandbox or live
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.paymentService: INFO
+    org.springframework.kafka: INFO

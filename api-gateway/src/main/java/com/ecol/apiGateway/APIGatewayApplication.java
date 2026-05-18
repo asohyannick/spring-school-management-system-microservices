@@ -1,12 +1,13 @@
-package com.sms_microservices.apiGateway;
+package com.ecol.apiGateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 @SpringBootApplication
-public class ApiGatewayApplication {
+public class APIGatewayApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ApiGatewayApplication.class, args);
+		SpringApplication.run(APIGatewayApplication.class, args);
 	}
 
 }

@@ -1,0 +1,59 @@
+# ============================================================
+#  admission-service configuration
+#  Database  : PostgreSQL
+#  Messaging : Kafka (Producer + Consumer)
+# ============================================================
+
+server:
+  port: 8082
+
+spring:
+  application:
+    name: admission-service
+
+  # ── PostgreSQL DataSource ──────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${ADMISSION_POSTGRES_DB:admission_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Kafka Producer ────────────────────────────────────────
+  kafka:
+    producer:
+      topics:
+        student-admitted: student.admitted    # ← publishes this
+
+    consumer:
+      topics:
+        payment-completed: payment.completed  # ← listens to this
+      group-id: admission-group
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.admissionService: INFO
+    org.springframework.kafka: INFO

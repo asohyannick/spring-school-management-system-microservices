@@ -1,4 +1,4 @@
-package com.sms_microservices.config_server;
+package com.ecol.configServer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

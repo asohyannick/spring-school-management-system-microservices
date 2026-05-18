@@ -1,5 +1,8 @@
 spring:
   application:
-    name: inventoryService
+    name: inventory-service
+  config:
+    import: configserver:http://config-server:8888
+
 server:
-  port: 8084
+  port: 8087

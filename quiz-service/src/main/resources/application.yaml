@@ -1,5 +1,8 @@
 spring:
   application:
-    name: quizService
+    name: quiz-service
+  config:
+    import: configserver:http://config-server:8888
+
 server:
-  port: 8085
+  port: 8086

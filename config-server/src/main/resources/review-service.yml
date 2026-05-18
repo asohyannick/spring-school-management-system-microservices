@@ -1,0 +1,53 @@
+# ============================================================
+#  review-service configuration
+#  Database  : MongoDB
+#  Storage   : MinIO
+#  Messaging : Kafka (Producer + Consumer)
+#  Produces  : review.posted
+#  Consumes  : course.created
+# ============================================================
+
+server:
+  port: 8089
+
+spring:
+  application:
+    name: review-service
+
+  # ── MongoDB ───────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${DB_HOST:localhost}:${MONGO_PORT:27017}/${MONGO_DB:review_db}?authSource=${MONGO_AUTH_SOURCE:admin}
+      auto-index-creation: true
+
+  # ── Kafka ─────────────────────────────────────────────────
+  kafka:
+    producer:
+      topics:
+        review-posted: review.posted          # ← publishes this
+
+    consumer:
+      topics:
+        course-created: course.created        # ← listens to this
+      group-id: review-group
+
+# ── MinIO Object Storage ──────────────────────────────────
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET_REVIEWS}
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.reviewService: INFO
+    org.springframework.kafka: INFO
+    org.springframework.data.mongodb: INFO

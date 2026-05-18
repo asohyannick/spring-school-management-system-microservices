@@ -1,0 +1,61 @@
+# ============================================================
+#  attendance-service configuration
+#  Database  : MySQL
+#  Messaging : Kafka (Producer + Consumer)
+#  Produces  : attendance.marked
+#  Consumes  : student.enrolled
+# ============================================================
+
+server:
+  port: 8092
+
+spring:
+  application:
+    name: attendance-service
+
+  # ── MySQL DataSource ───────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${MYSQL_PORT:3306}/${ATTENDANCE_MYSQL_DB:attendance_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Kafka ─────────────────────────────────────────────────
+  kafka:
+    producer:
+      topics:
+        attendance-marked: attendance.marked  # ← publishes this
+
+    consumer:
+      topics:
+        student-enrolled: student.enrolled    # ← listens to this
+      group-id: attendance-group
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.attendanceService: INFO
+    org.springframework.kafka: INFO

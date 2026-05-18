@@ -1,0 +1,82 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # Infrastructure
+  - job_name: 'discovery-server'
+    static_configs:
+      - targets: ['discovery-server:8761']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'config-server'
+    static_configs:
+      - targets: ['config-server:8888']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:8080']
+    metrics_path: '/actuator/prometheus'
+
+  # Business Services
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8081']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'admission-service'
+    static_configs:
+      - targets: ['admission-service:8082']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'course-service'
+    static_configs:
+      - targets: ['course-service:8083']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'assignment-service'
+    static_configs:
+      - targets: ['assignment-service:8084']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service:8085']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'quiz-service'
+    static_configs:
+      - targets: ['quiz-service:8086']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:8087']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'human-resource-service'
+    static_configs:
+      - targets: ['human-resource-service:8088']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'review-service'
+    static_configs:
+      - targets: ['review-service:8089']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'staffprofile-service'
+    static_configs:
+      - targets: ['staffprofile-service:8090']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'studentprofile-service'
+    static_configs:
+      - targets: ['studentprofile-service:8091']
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'attendance-service'
+    static_configs:
+      - targets: ['attendance-service:8092']
+    metrics_path: '/actuator/prometheus'

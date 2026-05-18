@@ -1,3 +1,82 @@
+# ============================================================
+#  SHARED CONFIGURATION
+#  Inherited by ALL 12 microservices automatically
+#  when they contact the config server
+# ============================================================
+
+# ── Eureka Discovery ──────────────────────────────────────
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_USER:eureka}:${EUREKA_PASSWORD:eureka}@discovery-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# ── Kafka Shared Configuration ────────────────────────────
 spring:
-  application:
-    name: config-server
+  config:
+    import:
+      - optional:file:../.env.properties
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
+
+    # ── Producer defaults (all producer services) ─────────
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+    # ── Consumer defaults (all consumer services) ─────────
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: "com.ecol.*"
+
+    # ── Listener ──────────────────────────────────────────
+    listener:
+      ack-mode: manual_immediate
+
+  # ── Spring Cloud Bus (Kafka) ──────────────────────────
+  cloud:
+    bus:
+      enabled: true
+      destination: springCloudBus
+
+# ── Actuator & Prometheus (all services) ─────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics, busrefresh
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ── API Version (all services) ────────────────────────────
+api:
+  version: ${API_VERSION:v1}
+
+# ── Shared Logging ────────────────────────────────────────
+logging:
+  level:
+    org.springframework.cloud: INFO
+    org.springframework.kafka: INFO
+    com.ecol: INFO
+

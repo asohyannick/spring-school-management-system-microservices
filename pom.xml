@@ -31,22 +31,25 @@
         <module>human-resource-service</module>
         <module>discovery-server</module>
         <module>review-service</module>
-        <module>staffProfile-service</module>
-        <module>studentProfile-service</module>
+        <module>staffprofile-service</module>
+        <module>studentprofile-service</module>
         <module>attendance-service</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
-        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <spring-cloud.version>2024.0.2</spring-cloud.version>
         <jjwt.version>0.12.6</jjwt.version>
         <firebase-admin.version>9.3.0</firebase-admin.version>
         <stripe-java.version>25.3.0</stripe-java.version>
+        <paypal-version>2.2.0</paypal-version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <flyway.version>10.10.0</flyway.version>
         <itext7.version>8.0.4</itext7.version>
         <springdoc.version>2.5.0</springdoc.version>
         <minio.version>9.0.0</minio.version>
+        <promethus.version>1.16.5</promethus.version>
+        <webflux-ui-version>3.0.3</webflux-ui-version>
     </properties>
 
     <dependencyManagement>
@@ -71,6 +74,7 @@
                 <version>${jjwt.version}</version>
                 <scope>runtime</scope>
             </dependency>
+
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
@@ -88,6 +92,11 @@
                 <groupId>com.stripe</groupId>
                 <artifactId>stripe-java</artifactId>
                 <version>${stripe-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.paypal.sdk</groupId>
+                <artifactId>paypal-server-sdk</artifactId>
+                <version>${paypal-version}</version>
             </dependency>
 
             <dependency>
@@ -131,6 +140,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                <version>${webflux-ui-version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
@@ -147,6 +162,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${promethus.version}</version>
         </dependency>
 
         <dependency>

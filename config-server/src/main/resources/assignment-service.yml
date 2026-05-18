@@ -1,0 +1,56 @@
+# ============================================================
+#  assignment-service configuration
+#  Database  : MySQL
+#  Messaging : Kafka (Consumer only)
+#  Consumes  : student.enrolled
+# ============================================================
+
+server:
+  port: 8084
+
+spring:
+  application:
+    name: assignment-service
+
+  # ── MySQL DataSource ───────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${MYSQL_PORT:3306}/${ASSIGNMENT_MYSQL_DB:assignment_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Kafka Consumer ────────────────────────────────────────
+  kafka:
+    consumer:
+      topics:
+        student-enrolled: student.enrolled
+      group-id: assignment-group
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.assignmentService: INFO
+    org.springframework.kafka: INFO

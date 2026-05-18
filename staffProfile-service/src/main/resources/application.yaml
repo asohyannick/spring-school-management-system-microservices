@@ -1,3 +1,8 @@
 spring:
   application:
-    name: staffProfile-service
+    name: staffprofile-service
+  config:
+    import: configserver:http://config-server:8888
+
+server:
+  port: 8090

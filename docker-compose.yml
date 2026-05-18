@@ -1,3 +1,10 @@
+# ============================================================
+#  Shared env file — applied to all app services
+# ============================================================
+x-common-env: &common-env
+  env_file:
+    - .env.properties
+
 networks:
   sms-network:
     driver: bridge
@@ -10,6 +17,7 @@ volumes:
   kafka-data:
   zookeeper-data:
   minio-data:
+  grafana-data:
 
 services:
 
@@ -41,8 +49,8 @@ services:
   # ============================================================
   #  MySQL
   #  Serves: course-service, assignment-service, quiz-service,
-  #          inventory-service, staffProfile-service,
-  #          studentProfile-service
+  #          inventory-service, staffprofile-service,
+  #          studentprofile-service, attendance-service
   # ============================================================
   mysql:
     image: mysql:8.3
@@ -89,7 +97,7 @@ services:
       retries: 5
 
   # ============================================================
-  #  Redis (API Gateway rate limiting)
+  #  Redis — API Gateway rate limiting
   # ============================================================
   redis:
     image: redis:7-alpine
@@ -108,7 +116,7 @@ services:
       retries: 5
 
   # ============================================================
-  #  Zookeeper + Kafka
+  #  Zookeeper
   # ============================================================
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -120,12 +128,21 @@ services:
       - zookeeper-data:/var/lib/zookeeper/data
     networks:
       - sms-network
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "${ZOOKEEPER_PORT}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ============================================================
+  #  Kafka
+  # ============================================================
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: sms-kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "${KAFKA_PORT}:9092"
     environment:
@@ -179,17 +196,11 @@ services:
       context: ./discovery-server
       dockerfile: Dockerfile
     container_name: sms-discovery-server
+    <<: *common-env
     ports:
       - "${DISCOVERY_SERVER_PORT}:8761"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8761
-      API_VERSION: ${API_VERSION}
-      EUREKA_INSTANCE_HOSTNAME: discovery-server
-      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
-      EUREKA_CLIENT_FETCH_REGISTRY: "false"
-      SPRING_SECURITY_USER_NAME: ${EUREKA_USER}
-      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
     networks:
       - sms-network
     healthcheck:
@@ -199,24 +210,25 @@ services:
       retries: 8
 
   # ============================================================
-  #  Config Server — starts after discovery
+  #  Config Server — starts after discovery + kafka
   # ============================================================
   config-server:
     build:
       context: ./config-server
       dockerfile: Dockerfile
     container_name: sms-config-server
+    <<: *common-env
     ports:
       - "${CONFIG_SERVER_PORT}:8888"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: native
       SERVER_PORT: 8888
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_SERVER_GIT_URI}
-      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_SERVER_GIT_BRANCH}
     depends_on:
       discovery-server:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - sms-network
@@ -234,19 +246,11 @@ services:
       context: ./api-gateway
       dockerfile: Dockerfile
     container_name: sms-api-gateway
+    <<: *common-env
     ports:
       - "${API_GATEWAY_PORT}:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8080
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -254,42 +258,29 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - sms-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
 
   # ============================================================
-  #  auth-service — PostgreSQL
+  #  auth-service — PostgreSQL + Kafka
   # ============================================================
   auth-service:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
     container_name: sms-auth-service
+    <<: *common-env
     ports:
       - "${AUTH_SERVICE_PORT}:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8081
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${AUTH_POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
-      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      FIREBASE_PRIVATE_KEY_ID: ${FIREBASE_PRIVATE_KEY_ID}
-      FIREBASE_KEY: ${FIREBASE_KEY}
-      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
-      FIREBASE_CLIENT_ID: ${FIREBASE_CLIENT_ID}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      SPRING_MAIL_HOST: ${MAIL_HOST}
-      SPRING_MAIL_PORT: ${MAIL_PORT}
-      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
-      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -297,34 +288,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    networks:
-      - sms-network
-
-  # ============================================================
-  #  attendance-service — MySQL
-  # ============================================================
-  attendance-service:
-    build:
-      context: ./attendance-service
-      dockerfile: Dockerfile
-    container_name: sms-attendance-service
-    ports:
-      - "${ATTENDANCE_SERVICE_PORT}:8092"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8092
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${ATTENDANCE_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      mysql:
+      kafka:
         condition: service_healthy
     networks:
       - sms-network
@@ -337,18 +301,11 @@ services:
       context: ./admission-service
       dockerfile: Dockerfile
     container_name: sms-admission-service
+    <<: *common-env
     ports:
       - "${ADMISSION_SERVICE_PORT}:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8082
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${ADMISSION_POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -364,30 +321,26 @@ services:
       - sms-network
 
   # ============================================================
-  #  course-service — MySQL
+  #  course-service — MySQL + Kafka
   # ============================================================
   course-service:
     build:
       context: ./course-service
       dockerfile: Dockerfile
     container_name: sms-course-service
+    <<: *common-env
     ports:
       - "${COURSE_SERVICE_PORT}:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8083
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${COURSE_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -395,30 +348,26 @@ services:
       - sms-network
 
   # ============================================================
-  #  assignment-service — MySQL
+  #  assignment-service — MySQL + Kafka
   # ============================================================
   assignment-service:
     build:
       context: ./assignment-service
       dockerfile: Dockerfile
     container_name: sms-assignment-service
+    <<: *common-env
     ports:
       - "${ASSIGNMENT_SERVICE_PORT}:8084"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8084
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${ASSIGNMENT_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - sms-network
@@ -431,23 +380,11 @@ services:
       context: ./payment-service
       dockerfile: Dockerfile
     container_name: sms-payment-service
+    <<: *common-env
     ports:
       - "${PAYMENT_SERVICE_PORT}:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8085
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${PAYMENT_POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      STRIPE_API_KEY: ${STRIPE_API_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
-      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
-      PAYPAL_MODE: ${PAYPAL_MODE}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -461,25 +398,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  quiz-service — MySQL + Kafka
+  #  quiz-service — MySQL + Kafka + MinIO
   # ============================================================
   quiz-service:
     build:
       context: ./quiz-service
       dockerfile: Dockerfile
     container_name: sms-quiz-service
+    <<: *common-env
     ports:
       - "${QUIZ_SERVICE_PORT}:8086"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8086
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${QUIZ_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -495,29 +425,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  inventory-service — MySQL + Kafka
+  #  inventory-service — MySQL + Kafka + MinIO
   # ============================================================
   inventory-service:
     build:
       context: ./inventory-service
       dockerfile: Dockerfile
     container_name: sms-inventory-service
+    <<: *common-env
     ports:
       - "${INVENTORY_SERVICE_PORT}:8087"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8087
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${INVENTORY_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET_STUDENT_PROFILES}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -533,30 +452,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  human-resource-service — PostgreSQL + Kafka
-  #  NOTE: folder on disk is human-reesource-service (typo)
+  #  human-resource-service — PostgreSQL + Kafka + MinIO
   # ============================================================
   human-resource-service:
     build:
-      context: ./human-reesource-service
+      context: ./human-resource-service
       dockerfile: Dockerfile
     container_name: sms-human-resource-service
+    <<: *common-env
     ports:
       - "${HUMAN_RESOURCE_SERVICE_PORT}:8088"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8088
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${HR_POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET_STUDENT_PROFILES}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -572,27 +479,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  review-service — MongoDB + Kafka
+  #  review-service — MongoDB + Kafka + MinIO
   # ============================================================
   review-service:
     build:
       context: ./review-service
       dockerfile: Dockerfile
     container_name: sms-review-service
+    <<: *common-env
     ports:
       - "${REVIEW_SERVICE_PORT}:8089"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8089
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/${MONGO_DB}?authSource=${MONGO_AUTH_SOURCE}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET_STUDENT_PROFILES}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -608,29 +506,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  staffProfile-service — MySQL + Kafka
+  #  staffprofile-service — MySQL + Kafka + MinIO
   # ============================================================
   staffprofile-service:
     build:
       context: ./staffProfile-service
       dockerfile: Dockerfile
     container_name: sms-staffprofile-service
+    <<: *common-env
     ports:
       - "${STAFF_PROFILE_SERVICE_PORT}:8090"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8090
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${STAFF_PROFILE_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET_STUDENT_PROFILES}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -646,29 +533,18 @@ services:
       - sms-network
 
   # ============================================================
-  #  studentProfile-service — MySQL + Kafka
+  #  studentprofile-service — MySQL + Kafka + MinIO
   # ============================================================
   studentprofile-service:
     build:
       context: ./studentProfile-service
       dockerfile: Dockerfile
     container_name: sms-studentprofile-service
+    <<: *common-env
     ports:
       - "${STUDENT_PROFILE_SERVICE_PORT}:8091"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8091
-      API_VERSION: ${API_VERSION}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${STUDENT_PROFILE_MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET_STUDENT_PROFILES}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -679,6 +555,72 @@ services:
       kafka:
         condition: service_healthy
       minio:
+        condition: service_healthy
+    networks:
+      - sms-network
+
+  # ============================================================
+  #  attendance-service — MySQL + Kafka
+  # ============================================================
+  attendance-service:
+    build:
+      context: ./attendance-service
+      dockerfile: Dockerfile
+    container_name: sms-attendance-service
+    <<: *common-env
+    ports:
+      - "${ATTENDANCE_SERVICE_PORT}:8092"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - sms-network
+
+  # ============================================================
+  #  Prometheus — Metrics Collection
+  #  UI: http://localhost:9090
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sms-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - sms-network
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================
+  #  Grafana — Metrics Visualization
+  #  UI: http://localhost:3000  (admin / admin)
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sms-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
         condition: service_healthy
     networks:
       - sms-network

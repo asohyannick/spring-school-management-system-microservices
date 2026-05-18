@@ -1,0 +1,64 @@
+# ============================================================
+#  inventory-service configuration
+#  Database  : MySQL
+#  Storage   : MinIO
+#  Messaging : Kafka (Consumer only)
+#  Consumes  : payment.completed
+# ============================================================
+
+server:
+  port: 8087
+
+spring:
+  application:
+    name: inventory-service
+
+  # ── MySQL DataSource ───────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${MYSQL_PORT:3306}/${INVENTORY_MYSQL_DB:inventory_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Kafka Consumer ────────────────────────────────────────
+  kafka:
+    consumer:
+      topics:
+        payment-completed: payment.completed  # ← listens to this
+      group-id: inventory-group
+
+# ── MinIO Object Storage ──────────────────────────────────
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET_INVENTORY}
+
+# ── Swagger / OpenAPI ─────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    com.ecol.inventoryService: INFO
+    org.springframework.kafka: INFO
