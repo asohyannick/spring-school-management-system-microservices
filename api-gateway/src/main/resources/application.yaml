@@ -1,3 +1,192 @@
 spring:
   application:
     name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        # ── API Routes ───────────────────────────────────
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/${api.version}/auth/**
+
+        - id: attendance-service
+          uri: lb://ATTENDANCE-SERVICE
+          predicates:
+            - Path=/api/${api.version}/attendance/**
+
+        - id: admission-service
+          uri: lb://ADMISSION-SERVICE
+          predicates:
+            - Path=/api/${api.version}/admissions/**
+
+        - id: course-service
+          uri: lb://COURSE-SERVICE
+          predicates:
+            - Path=/api/${api.version}/courses/**
+
+        - id: assignment-service
+          uri: lb://ASSIGNMENT-SERVICE
+          predicates:
+            - Path=/api/${api.version}/assignments/**
+
+        - id: human-resource-service
+          uri: lb://HUMAN-RESOURCE-SERVICE
+          predicates:
+            - Path=/api/${api.version}/human-resources/**
+
+        - id: inventory-service
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/api/${api.version}/inventory/**
+
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/${api.version}/payments/**
+
+        - id: quiz-service
+          uri: lb://QUIZ-SERVICE
+          predicates:
+            - Path=/api/${api.version}/quizzes/**
+
+        - id: review-service
+          uri: lb://REVIEW-SERVICE
+          predicates:
+            - Path=/api/${api.version}/reviews/**
+
+        - id: staff-profile-service
+          uri: lb://STAFF-PROFILE-SERVICE
+          predicates:
+            - Path=/api/${api.version}/staff-profiles/**
+
+        - id: student-profile-service
+          uri: lb://STUDENT-PROFILE-SERVICE
+          predicates:
+            - Path=/api/${api.version}/student-profiles/**
+
+        # ── Swagger Docs Routes ──────────────────────────
+        - id: auth-service-docs
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/v3/api-docs/auth-service
+          filters:
+            - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+
+        - id: attendance-service-docs
+          uri: lb://ATTENDANCE-SERVICE
+          predicates:
+            - Path=/v3/api-docs/attendance-service
+          filters:
+            - RewritePath=/v3/api-docs/attendance-service, /v3/api-docs
+
+        - id: admission-service-docs
+          uri: lb://ADMISSION-SERVICE
+          predicates:
+            - Path=/v3/api-docs/admission-service
+          filters:
+            - RewritePath=/v3/api-docs/admission-service, /v3/api-docs
+
+        - id: course-service-docs
+          uri: lb://COURSE-SERVICE
+          predicates:
+            - Path=/v3/api-docs/course-service
+          filters:
+            - RewritePath=/v3/api-docs/course-service, /v3/api-docs
+
+        - id: assignment-service-docs
+          uri: lb://ASSIGNMENT-SERVICE
+          predicates:
+            - Path=/v3/api-docs/assignment-service
+          filters:
+            - RewritePath=/v3/api-docs/assignment-service, /v3/api-docs
+
+        - id: human-resource-service-docs
+          uri: lb://HUMAN-RESOURCE-SERVICE
+          predicates:
+            - Path=/v3/api-docs/human-resource-service
+          filters:
+            - RewritePath=/v3/api-docs/human-resource-service, /v3/api-docs
+
+        - id: inventory-service-docs
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/v3/api-docs/inventory-service
+          filters:
+            - RewritePath=/v3/api-docs/inventory-service, /v3/api-docs
+
+        - id: payment-service-docs
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/v3/api-docs/payment-service
+          filters:
+            - RewritePath=/v3/api-docs/payment-service, /v3/api-docs
+
+        - id: quiz-service-docs
+          uri: lb://QUIZ-SERVICE
+          predicates:
+            - Path=/v3/api-docs/quiz-service
+          filters:
+            - RewritePath=/v3/api-docs/quiz-service, /v3/api-docs
+
+        - id: review-service-docs
+          uri: lb://REVIEW-SERVICE
+          predicates:
+            - Path=/v3/api-docs/review-service
+          filters:
+            - RewritePath=/v3/api-docs/review-service, /v3/api-docs
+
+        - id: staff-profile-service-docs
+          uri: lb://STAFF-PROFILE-SERVICE
+          predicates:
+            - Path=/v3/api-docs/staff-profile-service
+          filters:
+            - RewritePath=/v3/api-docs/staff-profile-service, /v3/api-docs
+
+        - id: student-profile-service-docs
+          uri: lb://STUDENT-PROFILE-SERVICE
+          predicates:
+            - Path=/v3/api-docs/student-profile-service
+          filters:
+            - RewritePath=/v3/api-docs/student-profile-service, /v3/api-docs
+
+# ── Springdoc Gateway Config ──────────────────────────────
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - name: Auth Service
+        url: /v3/api-docs/auth-service
+      - name: Attendance Service
+        url: /v3/api-docs/attendance-service
+      - name: Admission Service
+        url: /v3/api-docs/admission-service
+      - name: Course Service
+        url: /v3/api-docs/course-service
+      - name: Assignment Service
+        url: /v3/api-docs/assignment-service
+      - name: Human Resource Service
+        url: /v3/api-docs/human-resource-service
+      - name: Inventory Service
+        url: /v3/api-docs/inventory-service
+      - name: Payment Service
+        url: /v3/api-docs/payment-service
+      - name: Quiz Service
+        url: /v3/api-docs/quiz-service
+      - name: Review Service
+        url: /v3/api-docs/review-service
+      - name: StaffProfile Service
+        url: /v3/api-docs/staff-profile-service
+      - name: StudentProfile Service
+        url: /v3/api-docs/student-profile-service
+    use-root-path: true
+    display-request-duration: true
+    groups-order: ASC
+    operations-sorter: method
+    disable-swagger-default-url: true
+  api-docs:
+    enabled: true
+    path: /v3/api-docs

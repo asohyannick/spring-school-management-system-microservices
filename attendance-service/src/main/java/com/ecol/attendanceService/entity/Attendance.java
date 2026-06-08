@@ -12,7 +12,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @NoArgsConstructor
 @Data
-@Builder
 @Table(name = "attendances")
 public class Attendance {
   @Id

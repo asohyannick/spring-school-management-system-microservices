@@ -1,5 +1,4 @@
 package com.ecol.courseService.entity;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +11,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @NoArgsConstructor
 @Data
-@Builder
 public class Course {
    
    @Id

@@ -32,7 +32,7 @@ public class JWTConfig {
 		private static final String REFRESH_TOKEN    = "REFRESH";
 		private static final long PASSWORD_RESET_EXPIRATION = 1000 * 60 * 5L;
 		
-		private SecretKey getSigningKey() {
+		private SecretKey getSigningKey() throws BadRequestException {
 			byte[] keyBytes = jwtSecretKey.getBytes(StandardCharsets.UTF_8);
 			if (keyBytes.length < 32) {
 				throw new BadRequestException ("JWT secret key must be at least 32 characters long");
@@ -40,7 +40,7 @@ public class JWTConfig {
 			return Keys.hmacShaKeyFor(keyBytes);
 		}
 		
-		public String generateAccessToken(String email, String role) {
+		public String generateAccessToken(String email, String role) throws BadRequestException {
 			Instant now = Instant.now();
 			return Jwts.builder()
 					       .id(UUID.randomUUID().toString())
@@ -53,7 +53,7 @@ public class JWTConfig {
 					       .compact();
 		}
 		
-		public String generateRefreshToken(String email) {
+		public String generateRefreshToken(String email) throws BadRequestException {
 			Instant now = Instant.now();
 			return Jwts.builder()
 					       .id(UUID.randomUUID().toString())
@@ -65,7 +65,7 @@ public class JWTConfig {
 					       .compact();
 		}
 		
-		public Claims validateToken( String token) {
+		public Claims validateToken( String token) throws BadRequestException {
 			return Jwts.parser()
 					       .verifyWith(getSigningKey())
 					       .build()
@@ -81,7 +81,7 @@ public class JWTConfig {
 			return refreshTokenExpirationMs / 1000;
 		}
 		
-		public String generateMagicLinkToken(String email) {
+		public String generateMagicLinkToken(String email) throws BadRequestException {
 			return Jwts.builder()
 					       .subject(email)
 					       .claim("type", "magic-link")
@@ -100,12 +100,12 @@ public class JWTConfig {
 						                .getPayload();
 				
 				return "PASSWORD_RESET".equals(claims.get("type", String.class));
-			} catch ( JwtException e) {
+			} catch (JwtException | BadRequestException e) {
 				return false;
 			}
 		}
 		
-		public String generatePasswordResetToken(String email) {
+		public String generatePasswordResetToken(String email) throws BadRequestException {
 			return Jwts.builder()
 					       .subject(email)
 					       .claim("type", "PASSWORD_RESET")
@@ -115,7 +115,7 @@ public class JWTConfig {
 					       .compact();
 		}
 		
-		public String extractEmailFromPasswordResetToken(String token) {
+		public String extractEmailFromPasswordResetToken(String token) throws BadRequestException {
 			try {
 				return Jwts.parser()
 						       .verifyWith(getSigningKey())

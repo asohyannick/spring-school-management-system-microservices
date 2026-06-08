@@ -1,5 +1,4 @@
 package com.ecol.admissionService.exception.globalExceptionHandler;
-
 import com.ecol.admissionService.exception.badRequestException.BadRequestException;
 import com.ecol.admissionService.exception.conflictRequestException.ConflictRequestException;
 import com.ecol.admissionService.exception.globalExceptionResponseHandler.GlobalExceptionResponseHandler;

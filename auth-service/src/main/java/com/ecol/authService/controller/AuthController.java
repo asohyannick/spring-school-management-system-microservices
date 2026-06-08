@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication Service", description = "Registration, OTP verification and authentication endpoints")
+@Tag(name = "User Service", description = "Registration, OTP verification and authentication endpoints")
 public class AuthController {
 
 		private final AuthService authService;

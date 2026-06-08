@@ -48,6 +48,21 @@ spring:
     listener:
       ack-mode: manual_immediate
 
+      # ── Redis Shared Configuration ──────────────────────────
+    data:
+        redis:
+          host: ${REDIS_HOST:redis}
+          port: ${REDIS_PORT:6379}
+          password: ${REDIS_PASSWORD:}
+          timeout: 2000ms
+          lettuce:
+            pool:
+              max-active: 10
+              max-idle: 5
+              min-idle: 1
+              max-wait: 1000ms
+            shutdown-timeout: 200ms
+
   # ── Spring Cloud Bus (Kafka) ──────────────────────────
   cloud:
     bus:
@@ -80,3 +95,11 @@ logging:
     org.springframework.kafka: INFO
     com.ecol: INFO
 
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+  show-actuator: false
+  packages-to-scan: com.ecol
